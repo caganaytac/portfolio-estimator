@@ -1,3 +1,6 @@
+## Further commits are comming.
+
+
 # Portfolio Estimator
 
 A lightweight fintech backend application that enables individuals and companies to build, analyze, and optimize investment portfolios. The platform provides portfolio evaluation, diversification analysis, risk assessment, and AI-powered portfolio reallocation recommendations.
