@@ -6,8 +6,7 @@ export class CreateUserDto {
     email!: string;
 
     @IsNotEmpty()
-    @MinLength(6)
-    password!: string;
+    passwordHash!: string;
 
     @IsString()
     @IsIn(["user", "admin", "manager"])

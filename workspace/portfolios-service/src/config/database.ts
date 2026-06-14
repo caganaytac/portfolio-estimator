@@ -1,9 +1,9 @@
 import "reflect-metadata";
 import { DataSource } from "typeorm";
-import { User } from "../../../users-service/src/models/user";
-import { Corporate } from "../../../users-service/src/models/corporate";
-import { Person } from "../../../users-service/src/models/person";
 import { env } from "./env";
+import { Asset } from "../models/asset";
+import { Holding } from "../models/holding";
+import { Portfolio } from "../models/portfolio";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -16,7 +16,7 @@ export const AppDataSource = new DataSource({
   ssl: env.POSTGRES_SSL ? { rejectUnauthorized: false } : false,
   synchronize: false,
   logging: env.NODE_ENV === "development",
-  entities: [User, Corporate, Person],
+  entities: [Asset, Holding, Portfolio],
 });
 
 export const initializeDatabase = async () => {

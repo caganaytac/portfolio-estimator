@@ -9,8 +9,8 @@ export const config = {
     max: process.env.RATE_LIMIT_MAX ? Number(process.env.RATE_LIMIT_MAX) : 200,
   },
   services: {
-  users: process.env.USERS_URL || "http://users-service:3001",                         // Identity lifecycle, credential storage, role assignments, audit events
-  portfolios: process.env.PORTFOLIOS_URL || "http://portfolios-service:3005",          // Portfolio creation, allocation, tracking, portfolio optimization
+  usersService: process.env.USERS_SERVICE_URL,
+  portfoliosService: process.env.PORTFOLIOS_SERVICE_URL
 },
 
 };

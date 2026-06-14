@@ -18,23 +18,6 @@ export class UserController {
     }
   };
 
-  getUser = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const user = await this.userService.getUserById(req.params.id);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      return res.json({
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        createdAt: user.createdAt,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
   getUserByPublicId = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const publicId = req.params.publicId;

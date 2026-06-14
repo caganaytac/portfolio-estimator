@@ -16,6 +16,7 @@ export class PersonService extends BaseService<Person> {
 
 // Creates a new person profile and the associated user account
   async createPerson(dto: CreatePersonDto): Promise<Person> {
+    // ...dto + passwordHash
     const newUser = await this.userService.createUser(dto);
 
     return this.create({

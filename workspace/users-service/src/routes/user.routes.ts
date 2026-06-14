@@ -10,7 +10,6 @@ export const buildUserRouter = (controller: UserController) => {
   router.get("/listAll", controller.listUsers);
   router.post("/", validateBody(CreateUserDto), controller.createUser);
   router.get("/by-public/:publicId", controller.getUserByPublicId);
-  router.get("/:id", controller.getUser);
   router.patch("/:id", validateBody(UpdateUserDto), controller.updateUser);
   router.delete("/:id", controller.deleteUser);
 

@@ -28,15 +28,17 @@ export class UserService extends BaseService<User, CreateUserDto, UpdateUserDto>
       throw new AppError(409, "Email already in use");
     }
 
-    this.passwordPolicy.validate(dto.password);
-    const hashedPassword = await bcrypt.hash(dto.password, env.BCRYPT_ROUNDS);
-    const user = this.userRepo.create({ ...dto, passwordHash: hashedPassword });
+    const user = this.userRepo.create(dto);
     const saved = await this.userRepo.save(user);
     return saved;
   }
 
-  async getUserById(id: string): Promise<User | null> {
+  async getUserById(id: number): Promise<User | null> {
     return this.userRepo.findById(id);
+  }
+  
+  async getUserByEmail(email: string): Promise<User | null> {
+    return this.userRepo.findByEmail(email);
   }
 
   async getUserByPublicId(publicId: string): Promise<User | null> {
@@ -49,8 +51,12 @@ export class UserService extends BaseService<User, CreateUserDto, UpdateUserDto>
     return { data, total, page, pageSize };
   }
 
+  async changePassword(publicId: string, passwordHash: string) {
+    await this.userRepo.updateByPublicId(publicId, { passwordHash, updatedAt: new Date() });
+  }
+
   async updateUser(id: string, dto: UpdateUserDto) {
-    const user = await this.userRepo.findById(id);
+    const user = await this.userRepo.findByPublicId(id);
     if (!user) throw new AppError(404, "User not found");
 
     if (dto.email && dto.email !== user.email) {
@@ -65,15 +71,15 @@ export class UserService extends BaseService<User, CreateUserDto, UpdateUserDto>
       payload.updatedAt = new Date();
     }
 
-    const updated = await this.userRepo.update(id, payload);
+    const updated = await this.userRepo.updateByPublicId(id, payload);
     if (!updated) throw new AppError(404, "User not found");
 
     return updated;
   }
 
   async deleteUser(id: string) {
-    const user = await this.userRepo.findById(id);
+    const user = await this.userRepo.findByPublicId(id);
     if (!user) throw new AppError(404, "User not found");
-    await this.userRepo.delete(id);
+    await this.userRepo.deleteByPublicId(id);
   }
 }

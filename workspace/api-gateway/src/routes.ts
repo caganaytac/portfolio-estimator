@@ -1,12 +1,11 @@
-import express from "express";
+/* import express from "express";
 import { authenticateJWT, requireApiKey, AuthenticatedRequest } from "./auth.js";
 import { withMetrics } from "./metrics.js";
 import { createServiceClient } from "./serviceClient.js";
 import { config } from "./config.js";
 
-const usersClient = createServiceClient(config.services.users);
-const productsClient = createServiceClient(config.services.products);
-const notificationsClient = createServiceClient(config.services.notifications);
+const usersClient = createServiceClient(config.services.usersService as string);
+const portfoliosClient = createServiceClient(config.services.portfoliosService as string);
 const router = express.Router();
 
 // Health check
@@ -75,7 +74,7 @@ router.use(
           headers: { ...req.headers, host: undefined },
           params: req.query,
         };
-        const response = await notificationsClient.request(opts);
+        const response = await notificationsClient.request(opts as any);
         res.status(response.status).json(response.data);
         resolve();
       })
@@ -84,3 +83,4 @@ router.use(
 );
 
 export default router;
+ */

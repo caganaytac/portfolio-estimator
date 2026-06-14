@@ -3,10 +3,16 @@ import { Repository, FindOptionsOrder, FindOptionsWhere, DeepPartial } from "typ
 export abstract class BaseRepository<T extends object> {
   protected readonly repo: Repository<T>;
   protected readonly idField: keyof T;
+  protected readonly publicIdField: keyof T;
 
-  protected constructor(repo: Repository<T>, idField: keyof T = "id" as keyof T) {
+  protected constructor(
+    repo: Repository<T>,
+    idField: keyof T = "id" as keyof T,
+    publicIdField: keyof T = "publicId" as keyof T
+  ) {
     this.repo = repo;
     this.idField = idField;
+    this.publicIdField = publicIdField;
   }
 
   create(payload: DeepPartial<T>) {
@@ -18,7 +24,11 @@ export abstract class BaseRepository<T extends object> {
   }
 
   async findById(id: string | number) {
-    return this.repo.findOne({ where: { [this.idField]: id } as any });
+    return this.repo.findOne({ where: { [this.idField]: id } as FindOptionsWhere<T> });
+  }
+
+  async findByPublicId(publicId: string) {
+    return this.repo.findOne({ where: { [this.publicIdField]: publicId } as FindOptionsWhere<T> });
   }
 
   findOne(where: FindOptionsWhere<T>) {
@@ -29,7 +39,7 @@ export abstract class BaseRepository<T extends object> {
     return this.repo.findAndCount({ skip, take, order });
   }
 
- async update(id: string | number, payload: Partial<T>) {
+  async update(id: number, payload: Partial<T>) {
     await this.repo.update(
       { [this.idField]: id } as FindOptionsWhere<T>,
       payload as any
@@ -37,7 +47,19 @@ export abstract class BaseRepository<T extends object> {
     return this.findById(id);
   }
 
+  async updateByPublicId(publicId: string, payload: Partial<T>) {
+    await this.repo.update(
+      { [this.publicIdField]: publicId } as FindOptionsWhere<T>,
+      payload as any
+    );
+    return this.findByPublicId(publicId);
+  }
+
   async delete(id: string | number) {
-    await this.repo.delete({ [this.idField]: id } as FindOptionsWhere<T> );
-}
+    await this.repo.delete({ [this.idField]: id } as FindOptionsWhere<T>);
+  }
+
+  async deleteByPublicId(publicId: string) {
+    await this.repo.delete({ [this.publicIdField]: publicId } as FindOptionsWhere<T>);
+  }
 }

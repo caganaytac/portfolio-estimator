@@ -1,0 +1,13 @@
+corporate example to login:
+
+{  
+    "email": "trading@bmw.com",
+    "password":""Ca!3456789123",
+}
+
+person example to login:
+
+{
+    "email": "susanne@@bmw.com",
+    "password": "Ca!3456789123"
+}
