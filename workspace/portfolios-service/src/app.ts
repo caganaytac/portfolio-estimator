@@ -1,28 +1,24 @@
+// app.ts (portfolios-service)
 import compression from "compression";
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
-import { UserController } from "./controllers/user.controller";
-import { AuthController } from "./controllers/auth.controller";
-import { CorporateController } from "./controllers/corporate.controller";
-import { PersonController } from "./controllers/person.controller";
-import { env } from "./config/env";
+import { AssetController } from "./controllers/asset.controller";
+import { PortfolioController } from "./controllers/portfolio.controller";
+import { HoldingController } from "./controllers/holding.controller";
 import { errorHandler } from "./middlewares/error.middleware";
 import { notFoundHandler } from "./middlewares/not-found.middleware";
 import { requestContext } from "./middlewares/request-context.middleware";
-import { buildCorporateRouter } from "./routes/corporate.routes";
-import { buildPersonRouter } from "./routes/person.routes";
-import { buildUserRouter } from "./routes/user.routes";
-import { buildAuthRouter } from "./routes/auth.routes";
+import { buildAssetRouter } from "./routes/asset.routes";
+import { buildPortfolioRouter } from "./routes/portfolio.routes";
 
 export interface AppDependencies {
-  userController: UserController;
-  authController: AuthController;
-  corporateController: CorporateController;
-  personController: PersonController;
+  assetController: AssetController;
+  portfolioController: PortfolioController;
+  holdingController: HoldingController;
 }
 
-export function buildApp({ userController, authController, corporateController, personController }: AppDependencies) {
+export function buildApp({ assetController, portfolioController, holdingController }: AppDependencies) {
   const app = express();
 
   app.disable("x-powered-by");
@@ -32,10 +28,11 @@ export function buildApp({ userController, authController, corporateController, 
   app.use(helmet());
   app.use(requestContext);
 
-  app.use("/users", buildUserRouter(userController));
-  app.use("/auth", buildAuthRouter(authController));
-  app.use("/corporates", buildCorporateRouter(corporateController));
-  app.use("/persons", buildPersonRouter(personController));
+  app.use("/assets", buildAssetRouter(assetController));
+
+  // holdingController is passed in here, not mounted separately —
+  // buildPortfolioRouter nests it under /portfolios/:portfolioId/holdings internally
+  app.use("/portfolios", buildPortfolioRouter(portfolioController, holdingController));
 
   app.use("*", notFoundHandler);
   app.use(errorHandler);

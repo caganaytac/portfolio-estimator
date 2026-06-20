@@ -19,7 +19,8 @@ export class UserService extends BaseService<User, CreateUserDto, UpdateUserDto>
   
   constructor(private readonly userRepo: UserRepository,private readonly passwordPolicy: PasswordPolicyService) 
   {
-    super(userRepo);}
+    super(userRepo);
+  }
   
 
   async createUser(dto: CreateUserDto): Promise<User> {

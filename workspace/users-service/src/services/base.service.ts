@@ -27,6 +27,9 @@ export abstract class BaseService<
   async update(id: string | number, dto: U): Promise<T | null> {
     const existing = await this.repo.findById(id);
     if (!existing) throw new AppError(404, "Resource not found");
+    if(typeof id === "string") {
+      return this.repo.updateByPublicId(id, dto as Partial<T>);
+    }
     return this.repo.update(id, dto as Partial<T>);
   }
 

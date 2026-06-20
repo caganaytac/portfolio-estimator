@@ -16,6 +16,7 @@ interface AccessTokenPayload extends JwtPayload {
 
 interface RefreshTokenPayload extends JwtPayload {
   sub: string;
+  role: string;
   type: "refresh";
 }
 
@@ -23,12 +24,13 @@ export class TokenService {
   generateTokens(publicId: string, role: string): AuthTokens {
     const accessPayload: AccessTokenPayload = {
       sub: publicId,
-      role,
+      role: role,
       type: "access",
     };
 
     const refreshPayload: RefreshTokenPayload = {
       sub: publicId,
+      role: role,
       type: "refresh",
     };
 

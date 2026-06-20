@@ -11,3 +11,6 @@ person example to login:
     "email": "susanne@@bmw.com",
     "password": "Ca!3456789123"
 }
+
+"email": "trading@bbs-fredenberg.eu",
+    "password":"Ca!3456789123",

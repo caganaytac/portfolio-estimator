@@ -8,10 +8,12 @@ export const buildUserRouter = (controller: UserController) => {
   const router = Router();
 
   router.get("/listAll", controller.listUsers);
-  router.post("/", validateBody(CreateUserDto), controller.createUser);
   router.get("/by-public/:publicId", controller.getUserByPublicId);
-  router.patch("/:id", validateBody(UpdateUserDto), controller.updateUser);
-  router.delete("/:id", controller.deleteUser);
+
+  // For simplicity, create/update/delete routes take place via coporate/person routes
+  //router.post("/", validateBody(CreateUserDto), controller.createUser);
+  //router.patch("/:id", validateBody(UpdateUserDto), controller.updateUser);
+  //router.delete("/:id", controller.deleteUser);
 
   return router;
 };
