@@ -1,31 +1,44 @@
-import axios, { AxiosRequestConfig } from "axios";
-import CircuitBreaker from "opossum";
-import pino from "pino";
+import axios, {
+  AxiosError,
+  type AxiosRequestConfig,
+  type AxiosResponse
+} from "axios";
+import { config } from "./config.js";
+import { GatewayError } from "./errors.js";
 
-const logger = pino();
+export interface ServiceClient {
+  readonly name: string;
+  request(options: AxiosRequestConfig): Promise<AxiosResponse<ArrayBuffer>>;
+}
 
-const defaultBreakerOptions = {
-  timeout: 3000,
-  errorThresholdPercentage: 50,
-  resetTimeout: 10000,
-};
-
-export function createServiceClient(baseURL: string) {
-  const client = axios.create({ baseURL, timeout: 5000 });
-  const breaker = new CircuitBreaker(
-    (opts: AxiosRequestConfig) => client.request(opts),
-    defaultBreakerOptions
-  );
-
-  breaker.fallback(() => ({
-    status: 503,
-    data: { error: "Service unavailable (circuit open)" },
-  }));
-
-  breaker.on("open", () => logger.warn({ baseURL }, "Circuit open"));
-  breaker.on("close", () => logger.info({ baseURL }, "Circuit closed"));
+export function createServiceClient(
+  name: string,
+  baseURL: string
+): ServiceClient {
+  const client = axios.create({
+    baseURL,
+    timeout: config.requestTimeoutMs,
+    maxRedirects: 0,
+    maxBodyLength: 2 * 1024 * 1024,
+    maxContentLength: 10 * 1024 * 1024,
+    responseType: "arraybuffer",
+    validateStatus: () => true
+  });
 
   return {
-    request: (opts: AxiosRequestConfig) => breaker.fire(opts),
+    name,
+    async request(options) {
+      try {
+        return await client.request<ArrayBuffer>(options);
+      } catch (error) {
+        const axiosError = error as AxiosError;
+
+        if (axiosError.code === "ECONNABORTED" || axiosError.code === "ETIMEDOUT") {
+          throw new GatewayError(504, `${name} service timed out`, name);
+        }
+
+        throw new GatewayError(502, `${name} service is unavailable`, name);
+      }
+    }
   };
 }

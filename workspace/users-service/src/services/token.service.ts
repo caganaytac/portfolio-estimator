@@ -62,7 +62,11 @@ export class TokenService {
     let payload: JwtPayload | string;
 
     try {
-      payload = jwt.verify(token, (env.REFRESH_TOKEN_SECRET ?? env.JWT_SECRET) as Secret);
+      payload = jwt.verify(
+        token,
+        (env.REFRESH_TOKEN_SECRET ?? env.JWT_SECRET) as Secret,
+        { algorithms: ["HS256"] }
+      );
     } catch {
       throw new AppError(401, "Invalid refresh token");
     }
@@ -82,7 +86,9 @@ export class TokenService {
     let payload: JwtPayload | string;
 
     try {
-      payload = jwt.verify(token, env.JWT_SECRET as Secret);
+      payload = jwt.verify(token, env.JWT_SECRET as Secret, {
+        algorithms: ["HS256"]
+      });
     } catch {
       throw new AppError(401, "Invalid access token");
     }

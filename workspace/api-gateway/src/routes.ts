@@ -1,86 +1,85 @@
-/* import express from "express";
-import { authenticateJWT, requireApiKey, AuthenticatedRequest } from "./auth.js";
-import { withMetrics } from "./metrics.js";
-import { createServiceClient } from "./serviceClient.js";
+import { Router } from "express";
+import { authRoutePolicy, authenticateJWT } from "./auth.js";
 import { config } from "./config.js";
+import { metricsHandler } from "./metrics.js";
+import { proxyTo } from "./proxy.js";
+import {
+  createServiceClient,
+  type ServiceClient
+} from "./serviceClient.js";
 
-const usersClient = createServiceClient(config.services.usersService as string);
-const portfoliosClient = createServiceClient(config.services.portfoliosService as string);
-const router = express.Router();
+export interface GatewayClients {
+  users: ServiceClient;
+  portfolios: ServiceClient;
+  evaluations: ServiceClient;
+}
 
-// Health check
-router.get("/health", (_req, res) => res.json({ status: "ok", uptime: process.uptime() }));
+export function createGatewayClients(): GatewayClients {
+  return {
+    users: createServiceClient("users", config.services.users),
+    portfolios: createServiceClient("portfolios", config.services.portfolios),
+    evaluations: createServiceClient("evaluations", config.services.evaluations)
+  };
+}
 
-// Metrics endpoint
-router.get("/metrics", withMetrics("/metrics", async (_req, res) => {
-  res.json({ message: "metrics ok" });
-}));
+export function buildGatewayRouter(
+  clients: GatewayClients = createGatewayClients()
+) {
+  const router = Router();
 
-// Users service (protected)
-router.use(
-  "/api/users",
-  withMetrics("/api/users", async (req, res) => {
-    await new Promise<void>((resolve) =>
-      authenticateJWT(req, res, async () => {
-        const path = req.originalUrl.replace(/^\/api\/users/, "") || "/";
-        const opts = {
-          method: req.method as any,
-          url: path,
-          data: req.body,
-          headers: { ...req.headers, host: undefined },
-          params: req.query,
-        };
-        const response = await usersClient.request(opts);
-        res.status(response.status).json(response.data);
-        resolve();
-      })
-    );
-  })
-);
+  router.get("/health", (_req, res) => {
+    res.status(200).json({
+      status: "ok",
+      service: "api-gateway",
+      uptimeSeconds: Math.floor(process.uptime())
+    });
+  });
 
-// Products service (optional API key)
-router.use(
-  "/api/products",
-  withMetrics("/api/products", async (req, res) => {
-    await new Promise<void>((resolve) =>
-      requireApiKey(req, res, async () => {
-        const path = req.originalUrl.replace(/^\/api\/products/, "") || "/";
-        const opts = {
-          method: req.method as any,
-          url: path,
-          data: req.body,
-          headers: { ...req.headers, host: undefined },
-          params: req.query,
-        };
-        const response = await productsClient.request(opts);
-        res.status(response.status).json(response.data);
-        resolve();
-      })
-    );
-  })
-);
+  router.get("/metrics", metricsHandler);
 
-// Notifications service (protected)
-router.use(
-  "/api/notifications",
-  withMetrics("/api/notifications", async (req, res) => {
-    await new Promise<void>((resolve) =>
-      authenticateJWT(req as AuthenticatedRequest, res, async () => {
-        const path = req.originalUrl.replace(/^\/api\/notifications/, "") || "/";
-        const opts = {
-          method: req.method as any,
-          url: path,
-          data: req.body,
-          headers: { ...req.headers, host: undefined },
-          params: req.query,
-        };
-        const response = await notificationsClient.request(opts as any);
-        res.status(response.status).json(response.data);
-        resolve();
-      })
-    );
-  })
-);
+  router.use(
+    "/api/auth",
+    authRoutePolicy,
+    proxyTo(clients.users, "/api/auth", "/auth")
+  );
 
-export default router;
- */
+  router.use(
+    "/api/users",
+    authenticateJWT,
+    proxyTo(clients.users, "/api/users", "/users")
+  );
+
+  router.use(
+    "/api/persons",
+    authenticateJWT,
+    proxyTo(clients.users, "/api/persons", "/persons")
+  );
+
+  router.use(
+    "/api/corporates",
+    authenticateJWT,
+    proxyTo(clients.users, "/api/corporates", "/corporates")
+  );
+
+  router.use(
+    "/api/portfolios",
+    authenticateJWT,
+    proxyTo(clients.portfolios, "/api/portfolios", "/portfolios")
+  );
+
+  router.use(
+    "/api/assets",
+    authenticateJWT,
+    proxyTo(clients.portfolios, "/api/assets", "/assets")
+  );
+
+  router.use(
+    "/api/evaluations",
+    authenticateJWT,
+    proxyTo(clients.evaluations, "/api/evaluations", "/evaluations")
+  );
+
+  return router;
+}
+
+export default buildGatewayRouter();

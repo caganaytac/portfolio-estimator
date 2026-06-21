@@ -1,33 +1,27 @@
-import { jest, describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import request from "supertest";
-import { buildApp } from "../../src/app";
+import { buildHttpTestHarness } from "../support/http-test-harness";
 
-const userControllerMock = {
-  listUsers: jest.fn((_req: unknown, res: any) =>
-    res.json({ data: [], total: 0, page: 1, pageSize: 25 })
-  ),
-  createUser: jest.fn((_req: unknown, res: any) => res.status(201).json({})),
-  getUser: jest.fn((_req: unknown, res: any) => res.json({})),
-  updateUser: jest.fn((_req: unknown, res: any) => res.json({})),
-  deleteUser: jest.fn((_req: unknown, res: any) => res.status(204).send()),
-};
+describe("users-service health and fallback routes", () => {
+  it("reports liveness without touching a dependency", async () => {
+    const { app, authService } = buildHttpTestHarness();
 
-const authControllerMock = {
-  login: jest.fn((_req: unknown, res: any) => res.json({ accessToken: "token" })),
-  refresh: jest.fn((_req: unknown, res: any) => res.json({ accessToken: "token" })),
-  changePassword: jest.fn((_req: unknown, res: any) => res.status(204).send()),
-};
-
-const app = buildApp({
-  userController: userControllerMock as any,
-  authController: authControllerMock as any,
-});
-
-describe("Health endpoints", () => {
-  it("returns ok for live health", async () => {
     const response = await request(app).get("/health/live");
+
     expect(response.status).toBe(200);
-    expect(response.body.status).toBe("ok");
+    expect(response.body).toEqual({
+      status: "ok",
+      service: "users-service"
+    });
+    expect(authService.login).not.toHaveBeenCalled();
+  });
+
+  it("returns a useful 404 response for unknown routes", async () => {
+    const { app } = buildHttpTestHarness();
+
+    const response = await request(app).get("/does-not-exist");
+
+    expect(response.status).toBe(404);
+    expect(response.body.message).toBe("Route GET /does-not-exist not found");
   });
 });
-

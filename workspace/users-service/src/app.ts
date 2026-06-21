@@ -33,6 +33,13 @@ export function buildApp({ userController, authController, corporateController, 
   app.use(helmet());
   app.use(requestContext);
 
+  app.get("/health/live", (_req, res) => {
+    res.status(200).json({
+      status: "ok",
+      service: "users-service"
+    });
+  });
+
   app.use("/users", buildUserRouter(userController));
   app.use("/auth", buildAuthRouter(authController));
   app.use("/corporates", buildCorporateRouter(corporateController));

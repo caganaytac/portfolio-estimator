@@ -1,32 +1,72 @@
-import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
+import type { NextFunction, Request, Response } from "express";
+import jwt, { type JwtPayload } from "jsonwebtoken";
 import { config } from "./config.js";
 
-export interface AuthenticatedRequest extends Request {
-  user?: any;
+export interface AccessTokenPayload extends JwtPayload {
+  sub: string;
+  role: string;
+  type: "access";
 }
 
 export function authenticateJWT(
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ) {
-  const header = req.headers.authorization;
-  if (!header) return res.status(401).json({ error: "Missing Authorization header" });
+  const match = req.headers.authorization?.match(/^Bearer\s+(.+)$/i);
 
-  const token = header.split(" ")[1];
+  if (!match) {
+    return res.status(401).json({
+      message: "Missing or invalid Authorization header"
+    });
+  }
+
   try {
-    const payload = jwt.verify(token, config.jwtSecret);
-    req.user = payload;
-    next();
+    const payload = jwt.verify(match[1], config.jwtSecret, {
+      algorithms: ["HS256"]
+    });
+
+    if (
+      typeof payload === "string" ||
+      payload.type !== "access" ||
+      typeof payload.sub !== "string" ||
+      typeof payload.role !== "string"
+    ) {
+      return res.status(401).json({ message: "Invalid or expired access token" });
+    }
+
+    req.user = payload as AccessTokenPayload;
+    return next();
   } catch {
-    res.status(401).json({ error: "Invalid token" });
+    return res.status(401).json({ message: "Invalid or expired access token" });
   }
 }
 
-export function requireApiKey(req: Request, res: Response, next: NextFunction) {
-  if (!config.apiKey) return next();
-  const key = req.headers["x-api-key"];
-  if (key !== config.apiKey) return res.status(403).json({ error: "Invalid API key" });
-  next();
+export function requireRole(...roles: string[]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    return next();
+  };
+}
+
+export function authRoutePolicy(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const publicPostPaths = new Set([
+    "/login",
+    "/refresh",
+    "/register/person",
+    "/register/corporate"
+  ]);
+
+  if (req.method === "POST" && publicPostPaths.has(req.path)) {
+    return next();
+  }
+
+  return authenticateJWT(req, res, next);
 }

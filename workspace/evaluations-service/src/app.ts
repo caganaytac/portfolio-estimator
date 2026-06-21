@@ -1,28 +1,23 @@
-/* import compression from "compression";
+import compression from "compression";
+//It enables Cross-Origin Resource Sharing (CORS), 
+//a security mechanism that allows your server to accept API
+//requests from web applications hosted on different domains.
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
-import { UserController } from "./controllers/user.controller";
-import { AuthController } from "./controllers/auth.controller";
-import { CorporateController } from "./controllers/corporate.controller";
-import { PersonController } from "./controllers/person.controller";
-import { env } from "./config/env";
+import { EvaluationController } from "./controllers/evaluation.controller";
 import { errorHandler } from "./middlewares/error.middleware";
 import { notFoundHandler } from "./middlewares/not-found.middleware";
 import { requestContext } from "./middlewares/request-context.middleware";
-import { buildCorporateRouter } from "./routes/corporate.routes";
-import { buildPersonRouter } from "./routes/person.routes";
-import { buildUserRouter } from "./routes/user.routes";
-import { buildAuthRouter } from "./routes/auth.routes";
+import { buildEvaluationRouter } from "./routes/evaluation.routes";
 
 export interface AppDependencies {
-  userController: UserController;
-  authController: AuthController;
-  corporateController: CorporateController;
-  personController: PersonController;
+  evaluationController: EvaluationController;
 }
 
-export function buildApp({ userController, authController, corporateController, personController }: AppDependencies) {
+export function buildApp({
+  evaluationController
+}: AppDependencies) {
   const app = express();
 
   app.disable("x-powered-by");
@@ -32,14 +27,20 @@ export function buildApp({ userController, authController, corporateController, 
   app.use(helmet());
   app.use(requestContext);
 
-  app.use("/users", buildUserRouter(userController));
-  app.use("/auth", buildAuthRouter(authController));
-  app.use("/corporates", buildCorporateRouter(corporateController));
-  app.use("/persons", buildPersonRouter(personController));
+  app.get("/health", (_req, res) => {
+    res.status(200).json({
+      status: "ok",
+      service: "evaluations-service"
+    });
+  });
+
+  app.use(
+    "/evaluations",
+    buildEvaluationRouter(evaluationController)
+  );
 
   app.use("*", notFoundHandler);
   app.use(errorHandler);
 
   return app;
 }
- */
