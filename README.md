@@ -149,7 +149,7 @@ This project is under active development. Current focus: completing the `portfol
 Planned next:
 - [ ] `evaluations-service` risk/diversification calculations
 - [ ] AI advisor integration
-- [ ] Frontend (React + Axios/JWT interceptor pattern)
+- [ ] Frontend (React)
 
 ---
 
